@@ -1,3 +1,4 @@
+import * as Const from "./const.js";
 import Game from "./game.js";
 import Island from "./island.js";
 
@@ -22,11 +23,21 @@ class Hashi extends Game {
 
     this.invDir = (d: number): number => (d === 0 ? 2 : d === 1 ? 3 : d === 2 ? 0 : 1);
     this.rnd = (n: number): number => Math.floor(Math.random() * n);
-    this.draw = () => { };
     this.update = (dt) => { };
 
     this.create();
     this.loop();
+  }
+
+  draw() {
+    for (let r = 0; r < this.countY; r++) {
+      for (let c = 0; c < this.countX; c++) {
+        if (this.board[c + r * this.countX] === "#") {
+          this.ctx.rect(22 + c * Const.SIZE + Const.SIZE * c, 22 + r * Const.SIZE + Const.SIZE * r, Const.SIZE, Const.SIZE);
+        }
+      }
+    }
+    this.ctx.stroke();
   }
 
   create() {
@@ -41,14 +52,17 @@ class Hashi extends Game {
       this.createIslands();
     } while (this.islands.length + this.islandsTmp.length < this.maxIslands)
 
-    for (let r = 0; r < this.countY; r++) {
-      let str = "";
-      for (let c = 0; c < this.countX; c++) {
-        str += this.board[c + r * this.countX];
-      }
-      console.log(str);
-    }
-    console.log(this.islands.length + this.islandsTmp.length);
+    // for (let r = 0; r < this.countY; r++) {
+    //   let str = "";
+    //   for (let c = 0; c < this.countX; c++) {
+    //     str += this.board[c + r * this.countX];
+    //   }
+    //   console.log(str);
+    // }
+    // console.log(this.islands.length + this.islandsTmp.length);
+
+    this.islands.push(...this.islandsTmp);
+    this.islandsTmp = [];
   }
 
   createIslands() {
@@ -114,4 +128,4 @@ class Hashi extends Game {
   }
 }
 
-new Hashi(20, 10, 25);
+new Hashi(15, 15, 15);
