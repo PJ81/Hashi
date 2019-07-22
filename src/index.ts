@@ -6,6 +6,7 @@ class Hashi extends Game {
   countX: number;
   countY: number;
   maxIslands: number;
+  selected: Island;
   islands: Island[];
   islandsTmp: Island[];
   board: string[];
@@ -20,24 +21,70 @@ class Hashi extends Game {
     this.islands;
     this.islandsTmp;
     this.board;
+    this.selected = null;
 
+    this.canvas.width = cx * Const.BOX_SIZE + cx * Const.BOX_SIZE + Const.BOX_SIZE;
+    this.canvas.height = cy * Const.BOX_SIZE + cy * Const.BOX_SIZE + Const.BOX_SIZE;
+    this.ctx.font = "20px Consolas";
+
+    this.canvas.addEventListener("click", (me) => this.click(me, null));
+    this.canvas.addEventListener("touchstart", (te) => this.click(null, te));
     this.invDir = (d: number): number => (d === 0 ? 2 : d === 1 ? 3 : d === 2 ? 0 : 1);
     this.rnd = (n: number): number => Math.floor(Math.random() * n);
     this.update = (dt) => { };
-
+    this.draw = () => {
+      this.islands.forEach(e => e.draw(this.ctx));
+      this.ctx.stroke();
+    }
     this.create();
     this.loop();
   }
 
-  draw() {
-    for (let r = 0; r < this.countY; r++) {
-      for (let c = 0; c < this.countX; c++) {
-        if (this.board[c + r * this.countX] === "#") {
-          this.ctx.rect(22 + c * Const.SIZE + Const.SIZE * c, 22 + r * Const.SIZE + Const.SIZE * r, Const.SIZE, Const.SIZE);
-        }
+  click(me: MouseEvent, te: TouchEvent) {
+    let x: number, y: number;
+    if (me) {
+      x = me.clientX - (me.srcElement as HTMLCanvasElement).offsetLeft;
+      y = me.clientY - (me.srcElement as HTMLCanvasElement).offsetTop;
+    } else {
+      x = te.touches[0].clientX - (te.srcElement as HTMLCanvasElement).offsetLeft;
+      y = te.touches[0].clientY - (te.srcElement as HTMLCanvasElement).offsetTop;
+    }
+
+    for (let e = 0, l = this.islands.length; e < l; e++) {
+      const i = this.islands[e];
+      if (i.hasPoint(x, y)) {
+        this.selectIsland(i)
+        return;
       }
     }
-    this.ctx.stroke();
+  }
+
+  selectIsland(i: Island) {
+    if (!this.selected) {
+      this.selected = i;
+      i.selected = true;
+    } else {
+      if (i !== this.selected) {
+        this.selected.selected = false;
+        this.selected = i;
+        i.selected = true;
+      } else {
+
+      }
+    }
+  }
+
+  updateConnections(i: Island) {
+    for (const c of i.connections) {
+      if (c && !c.visited && c.count < 2) {
+        c.visited = true;
+        if (Math.random() < .06) {
+          c.count = 2;
+          c.island.connections[this.invDir(c.dir)].count = 2;
+        }
+        this.updateConnections(c.island);
+      }
+    }
   }
 
   create() {
@@ -52,17 +99,10 @@ class Hashi extends Game {
       this.createIslands();
     } while (this.islands.length + this.islandsTmp.length < this.maxIslands)
 
-    // for (let r = 0; r < this.countY; r++) {
-    //   let str = "";
-    //   for (let c = 0; c < this.countX; c++) {
-    //     str += this.board[c + r * this.countX];
-    //   }
-    //   console.log(str);
-    // }
-    // console.log(this.islands.length + this.islandsTmp.length);
-
     this.islands.push(...this.islandsTmp);
     this.islandsTmp = [];
+
+    this.updateConnections(this.islands[0]);
   }
 
   createIslands() {
@@ -128,4 +168,4 @@ class Hashi extends Game {
   }
 }
 
-new Hashi(15, 15, 15);
+new Hashi(11, 11, 35);

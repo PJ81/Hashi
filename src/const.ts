@@ -1,5 +1,5 @@
 export const
-  WIDTH = 800,
-  HEIGHT = 800,
+  WIDTH = 8,
+  HEIGHT = 8,
   SCALE = 1,
-  SIZE = 26;
+  BOX_SIZE = 21;
