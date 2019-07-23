@@ -24,7 +24,7 @@ export default class Game {
     document.getElementById("board").appendChild(this.canvas);
     this.lastTime = 0;
     this.accumulator = 0;
-    this.deltaTime = 1 / 500;
+    this.deltaTime = 1 / 60;
     this.loop = (time = 0) => {
       this.accumulator += (time - this.lastTime) / 1000;
       while (this.accumulator > this.deltaTime) {

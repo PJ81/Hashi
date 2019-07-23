@@ -1,6 +1,7 @@
 import * as Const from "./const.js";
 import Game from "./game.js";
 import Island from "./island.js";
+import Line from "./line.js";
 
 class Hashi extends Game {
   countX: number;
@@ -9,6 +10,7 @@ class Hashi extends Game {
   selected: Island;
   islands: Island[];
   islandsTmp: Island[];
+  lines: Line[];
   board: string[];
   rnd: (n: number) => number;
   invDir: (d: number) => number;
@@ -33,6 +35,11 @@ class Hashi extends Game {
     this.rnd = (n: number): number => Math.floor(Math.random() * n);
     this.update = (dt) => { };
     this.draw = () => {
+      this.ctx.beginPath();
+      this.lines.forEach(e => e.draw(this.ctx));
+      this.ctx.stroke();
+
+      this.ctx.beginPath();
       this.islands.forEach(e => e.draw(this.ctx));
       this.ctx.stroke();
     }
@@ -40,6 +47,7 @@ class Hashi extends Game {
     this.loop();
   }
 
+  //#region SELECTION
   click(me: MouseEvent, te: TouchEvent) {
     let x: number, y: number;
     if (me) {
@@ -64,31 +72,75 @@ class Hashi extends Game {
       this.selected = i;
       i.selected = true;
     } else {
-      if (i !== this.selected) {
-        this.selected.selected = false;
-        this.selected = i;
-        i.selected = true;
-      } else {
-
-      }
-    }
-  }
-
-  updateConnections(i: Island) {
-    for (const c of i.connections) {
-      if (c && !c.visited && c.count < 2) {
-        c.visited = true;
-        if (Math.random() < .06) {
-          c.count = 2;
-          c.island.connections[this.invDir(c.dir)].count = 2;
+      if (i !== this.selected && (i.x === this.selected.x || i.y === this.selected.y)) {
+        const ln = new Line(this.selected.x, this.selected.y, i.x, i.y);
+        if (this.updateLine(ln, false)) {
+          this.selected.selected = false;
+          this.selected = null;
+          return;
         }
-        this.updateConnections(c.island);
+
+        const rx = i.x - this.selected.x, ry = i.y - this.selected.y,
+          dx = rx < 0 ? -1 : rx === 0 ? 0 : 1,
+          dy = ry < 0 ? -1 : ry === 0 ? 0 : 1;
+        let x = this.selected.x, y = this.selected.y, f = false;
+        while (x !== i.x || y !== i.y) {
+          x += dx; y += dy;
+          if (this.board[x + y * this.countX] !== " ") break;
+          this.board[x + y * this.countX] = "+";
+        }
+        if (x === i.x && y === i.y) {
+          f = true;
+          this.updateLine(ln, true);
+        }
+        this.board.forEach((el, idx) => {
+          if (el === "+")
+            this.board[idx] = f ? "." : " ";
+        });
+      }
+      this.selected.selected = false;
+      this.selected = null;
+    }
+  }
+
+  updateLine(ln: Line, add: boolean): boolean {
+    for (let l = this.lines.length - 1, r = l; r > -1; r--) {
+      const li = this.lines[r];
+      if (li.equals(ln)) {
+        if (!li.nextStep()) {
+          this.clearLine(li);
+          this.lines.splice(r, 1);
+        }
+        return true;
+      }
+    }
+    if (add) this.lines.push(ln);
+    return false;
+  }
+
+  clearLine(li: Line) {
+    let s: number, e: number, step = 1;
+    if (li.bxe === li.bxs) {
+      step = this.countY;
+      s = li.bxe + li.bys * this.countX;
+      e = li.bxe + li.bye * this.countX;
+    } else {
+      s = li.bxs + li.bye * this.countX;
+      e = li.bxe + li.bye * this.countX;
+    }
+    for (let z = s; z < e; z += step) {
+      if (this.board[z] === ".") {
+        this.board[z] = " ";
       }
     }
   }
 
+  //#endregion
+
+  //#region CREATE ISLANDS
   create() {
     do {
+      this.lines = [];
       this.islands = [];
       this.islandsTmp = [];
       this.board = new Array(this.countX * this.countY);
@@ -98,11 +150,13 @@ class Hashi extends Game {
       this.board[i.x + this.countX * i.y] = "#";
       this.createIslands();
     } while (this.islands.length + this.islandsTmp.length < this.maxIslands)
-
     this.islands.push(...this.islandsTmp);
     this.islandsTmp = [];
-
     this.updateConnections(this.islands[0]);
+    this.board.forEach((el, idx) => {
+      if (el === ".")
+        this.board[idx] = " ";
+    });
   }
 
   createIslands() {
@@ -142,13 +196,6 @@ class Hashi extends Game {
     this.createIslands();
   }
 
-  randomize(arr: Island[]) {
-    for (let l = arr.length - 1, i = l; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-  }
-
   trySetIsland(x: number, y: number, ex: number, ey: number, dx: number, dy: number) {
     let steps = 0;
     do {
@@ -157,7 +204,6 @@ class Hashi extends Game {
       y += dy;
       if (x < 0 || x >= this.countX || y < 0 || y >= this.countY || this.board[x + this.countX * y] !== " ") return false;
     } while (!(x === ex && y === ey));
-
     this.board[x + this.countX * y] = "#";
     while (--steps) {
       x -= dx;
@@ -166,6 +212,28 @@ class Hashi extends Game {
     };
     return true;
   }
+
+  updateConnections(i: Island) {
+    for (const c of i.connections) {
+      if (c && !c.visited && c.count < 2) {
+        c.visited = true;
+        if (Math.random() < .06) {
+          c.count = 2;
+          c.island.connections[this.invDir(c.dir)].count = 2;
+        }
+        this.updateConnections(c.island);
+      }
+    }
+  }
+
+  randomize(arr: Island[]) {
+    for (let l = arr.length - 1, i = l; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+
+  //#endregion
 }
 
 new Hashi(11, 11, 35);
