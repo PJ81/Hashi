@@ -1,5 +1,3 @@
-import * as Const from "./const.js";
-
 export default class Line {
   horizontal: boolean;
   startX: number;
@@ -20,17 +18,19 @@ export default class Line {
     this.step = 1;
     this.horizontal = y1 === y2;
 
-    this.startX = Const.BOX_SIZE + x1 * Const.BOX_SIZE + Const.BOX_SIZE * x1;
-    this.startY = Const.BOX_SIZE + y1 * Const.BOX_SIZE + Const.BOX_SIZE * y1;
-    this.endX = Const.BOX_SIZE + x2 * Const.BOX_SIZE + Const.BOX_SIZE * x2;
-    this.endY = Const.BOX_SIZE + y2 * Const.BOX_SIZE + Const.BOX_SIZE * y2;
+    const BOX_SIZE = 21;
+
+    this.startX = BOX_SIZE + x1 * BOX_SIZE + BOX_SIZE * x1;
+    this.startY = BOX_SIZE + y1 * BOX_SIZE + BOX_SIZE * y1;
+    this.endX = BOX_SIZE + x2 * BOX_SIZE + BOX_SIZE * x2;
+    this.endY = BOX_SIZE + y2 * BOX_SIZE + BOX_SIZE * y2;
 
     if (this.horizontal) {
-      this.startY += Const.BOX_SIZE / 2;
-      this.endY += Const.BOX_SIZE / 2;
+      this.startY += BOX_SIZE / 2;
+      this.endY += BOX_SIZE / 2;
     } else {
-      this.startX += Const.BOX_SIZE / 2;
-      this.endX += Const.BOX_SIZE / 2;
+      this.startX += BOX_SIZE / 2;
+      this.endX += BOX_SIZE / 2;
     }
   }
 

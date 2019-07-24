@@ -1,5 +1,3 @@
-import * as Const from "./const.js";
-
 export default class Game {
   loop: (time?: number) => void;
   draw() {
@@ -17,10 +15,9 @@ export default class Game {
   constructor() {
     this.canvas = document.createElement('canvas');
     this.canvas.id = "main";
-    this.canvas.width = Const.WIDTH * Const.SCALE;
-    this.canvas.height = Const.HEIGHT * Const.SCALE;
+    this.canvas.width = 5;
+    this.canvas.height = 5;
     this.ctx = this.canvas.getContext('2d');
-    this.ctx.scale(Const.SCALE, Const.SCALE);
     document.getElementById("board").appendChild(this.canvas);
     this.lastTime = 0;
     this.accumulator = 0;
