@@ -1,11 +1,10 @@
 import Island from "./island.js";
-import Tuple from "./tuple.js";
+import { Cell, TType } from "./tuple.js";
 
 export default class Puzzle {
   cntX: number;
   cntY: number;
   maxIslands: number;
-  board: Tuple[];
 
   rnd: (n: number) => number;
   invDir: (d: number) => number;
@@ -21,36 +20,27 @@ export default class Puzzle {
     this.rndArray = (arr: any[]) => { return arr[this.rnd(arr.length)]; }
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
-    //this.ctx.beginPath();
-    //this.lines.forEach(e => e.draw(this.ctx));
-    //this.ctx.stroke();
-
-    ctx.beginPath();
-    this.board.forEach(e => { if (e.island) e.island.draw(ctx) });
-    ctx.stroke();
-  }
-
-  create() {
-    let islands: Tuple[];
-    do {
-      this.board = new Array(this.cntX * this.cntY).fill(null).map(e => new Tuple());
+  create(): Cell[] {
+    let islands: Cell[];
+    let board: Cell[];
+    while (true) {
+      board = new Array(this.cntX * this.cntY).fill(null).map(e => new Cell());
       const i = new Island(this.rnd(this.cntX), this.rnd(this.cntY));
-      this.board[i.x + i.y * this.cntX].set(i);
-      this.createIslands(0, 0);
-      islands = this.board.filter(e => e.island);
+      board[i.x + i.y * this.cntX].set(i, TType.PUZZLE);
+      board[i.x + i.y * this.cntX].set(i, TType.GUESS);
+      this.createIslands(board, 0, 0);
+      islands = board.filter(e => e.puzzle.island);
       if (islands.length >= this.maxIslands) break;
-    } while (true);
-
-    islands.forEach(e => e.island.selected = false);
+    }
+    return board;
   }
 
-  createIslands(test: number, mi: number) {
+  createIslands(board: Cell[], test: number, mi: number) {
     if (test > 1000 || mi >= this.maxIslands) {
       return;
     }
 
-    const i = this.rndArray(this.board.filter(e => e.island)).island;
+    const i = this.rndArray(board.filter(e => e.puzzle.island)).puzzle.island;
     let dir = this.rnd(4), tries: number;
     out:
     for (let k = 0; k < 4; k++) {
@@ -65,53 +55,42 @@ export default class Puzzle {
             case 3: p = this.rnd(i.x) + 1; ex = i.x - p; ey = i.y; break; // W
           }
 
-          if (ex > -1 && ex < this.cntX && ey > -1 && ey < this.cntY && !this.board[ex + ey * this.cntX].island && this.setIsland(i, ex, ey, dir)) {
+          if (ex > -1 && ex < this.cntX && ey > -1 && ey < this.cntY && !board[ex + ey * this.cntX].puzzle.island && this.setIsland(board, i, ex, ey, dir)) {
             mi++;
-            test = 0;
+            test = -1;
             break out;
           }
         }
         dir = (dir + 1) % 4;
       }
     }
-    this.createIslands(test + 1, mi);
+    this.createIslands(board, test + 1, mi);
   }
 
-  setIsland(i: Island, ex: number, ey: number, dir: number) {
+  setIsland(board: Cell[], i: Island, ex: number, ey: number, dir: number) {
     let steps = 0, x = i.x, y = i.y;
     const dx = dir === 1 ? 1 : dir === 3 ? -1 : 0, dy = dir === 0 ? -1 : dir === 2 ? 1 : 0;
     do {
       steps++;
       x += dx;
       y += dy;
-      if (x < 0 || x >= this.cntX || y < 0 || y >= this.cntY || this.board[x + this.cntX * y].str !== " ") return false;
+      if (x < 0 || x >= this.cntX || y < 0 || y >= this.cntY || board[x + this.cntX * y].puzzle.str !== " ") return false;
     } while (!(x === ex && y === ey));
 
     const ni = new Island(ex, ey);
-    this.board[x + this.cntX * y].set(ni);
+    board[x + this.cntX * y].set(ni, TType.PUZZLE);
+    board[x + this.cntX * y].set(ni, TType.GUESS);
     i.setConnection(dir, ni, false);
     ni.setConnection(this.invDir(dir), i, false);
-
-    const str = dx != 0 ? (Math.random() < .06 ? "H" : "h") : (Math.random() < .06 ? "V" : "v");
-    if (str === "H" || str === "V") {
-      ni.count = i.count = 2;
-    }
+    const str = dx !== 0 ? (Math.random() < .25 ? "H" : "h") : (Math.random() < .25 ? "V" : "v");
+    ni.count = i.count = ((str === "H" || str === "V") ? 2 : 1);
 
     while (--steps) {
       x -= dx;
       y -= dy;
-      this.board[x + this.cntX * y].str = str;
+      board[x + this.cntX * y].puzzle.str = str;
     }
-
     return true;
-  }
-
-  getIsland(x: number, y: number): Island {
-    for (const e of this.board.filter(e => e.island)) {
-      if (e.island.hasPoint(x, y))
-        return e.island;
-    }
-    return null;
   }
 }
 

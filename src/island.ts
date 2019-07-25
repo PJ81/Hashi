@@ -16,7 +16,7 @@ export default class Island {
   constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
-    this.count = 1;
+    this.count = 0;
     this.size = 21;
     this.selected = false;
     this.posX = this.size + this.x * this.size + this.size * this.x;

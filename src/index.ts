@@ -1,33 +1,46 @@
 import Game from "./game.js";
 import Island from "./island.js";
 import Puzzle from "./puzzle.js";
+import { Cell } from "./tuple.js";
+import Line from "./line.js";
 
 class Hashi extends Game {
-  countX: number;
-  countY: number;
+  cntX: number;
+  cntY: number;
   puzzle: Puzzle;
   selected: Island;
+  board: Cell[];
+  lines: Line[];
 
   constructor(cx = 10, cy = 10, den = 25) {
     super();
-    this.countX = cx;
-    this.countY = cy;
+    this.cntX = cx;
+    this.cntY = cy;
+    this.lines = [];
     this.selected = null;
     this.puzzle = new Puzzle(cx, cy, den);
 
     const BOX_SIZE = 21;
-
     this.canvas.width = cx * BOX_SIZE + cx * BOX_SIZE + BOX_SIZE;
     this.canvas.height = cy * BOX_SIZE + cy * BOX_SIZE + BOX_SIZE;
     this.ctx.font = "20px Consolas";
+    this.ctx.lineWidth = 2;
     this.canvas.addEventListener("click", (me) => this.click(me, null));
     this.canvas.addEventListener("touchstart", (te) => this.click(null, te));
 
     this.update = (dt) => { };
-    this.draw = () => this.puzzle.draw(this.ctx);
-
-    this.puzzle.create();
+    this.board = this.puzzle.create();
     this.loop();
+  }
+
+  draw() {
+    this.ctx.beginPath();
+    this.board.forEach(e => { if (e.guess.island) e.guess.island.draw(this.ctx) });
+    this.ctx.stroke();
+
+    this.ctx.beginPath();
+    this.lines.forEach(e => e.draw(this.ctx));
+    this.ctx.stroke();
   }
 
   click(me: MouseEvent, te: TouchEvent) {
@@ -39,8 +52,16 @@ class Hashi extends Game {
       x = te.touches[0].clientX - (te.srcElement as HTMLCanvasElement).offsetLeft;
       y = te.touches[0].clientY - (te.srcElement as HTMLCanvasElement).offsetTop;
     }
+    const z = this.getIsland(x, y);
+    z && this.selectIsland(z);
+  }
 
-    this.selectIsland(this.puzzle.getIsland(x, y));
+  getIsland(x: number, y: number): Island {
+    for (const e of this.board.filter(e => e.guess.island)) {
+      if (e.guess.island.hasPoint(x, y))
+        return e.guess.island;
+    }
+    return null;
   }
 
   selectIsland(i: Island) {
@@ -49,12 +70,74 @@ class Hashi extends Game {
       i.selected = true;
     } else {
       if (i !== this.selected && (i.x === this.selected.x || i.y === this.selected.y)) {
-        // ------------- TO DO -------------
-        // test if the path between the both islands is clean
+        let dx = 0, dy = 0;
+        if (i.x === this.selected.x) {
+          dy = this.selected.y < i.y ? 1 : -1;
+        } else {
+          dx = this.selected.x < i.x ? 1 : -1;
+        }
+        if (this.setPath(i, dx, dy)) {
+          const ln = new Line(this.selected.x, this.selected.y, i.x, i.y);
+          let f = false;
+          for (let l = this.lines.length - 1, c = l; c > -1; c--) {
+            const z = this.lines[c];
+            if (z.equals(ln)) {
+              f = true;
+              if (!z.nextStep()) {
+                this.lines.splice(l, 1);
+              };
+              break;
+            }
+          }
+          if (!f) this.lines.push(ln);
+        }
       }
       this.selected.selected = false;
       this.selected = null;
     }
+  }
+
+  setPath(i: Island, dx: number, dy: number): boolean {
+    let x = this.selected.x, y = this.selected.y,
+      str: string, s = dx === 0 ? ". v" : ". h",
+      b: string, f = false;
+    out:
+    while (true) {
+      x += dx; y += dy;
+      b = this.board[x + y * this.cntX].guess.str;
+      switch (b) {
+        case " ":
+          str = s;
+          break;
+        case "v":
+          str = ".vV";
+          f = s !== ". v";
+          break;
+        case "V":
+          str = ".V "
+          f = s !== ". v";
+          break;
+        case "h":
+          str = ".hH";
+          f = s !== ". h";
+          break;
+        case "H":
+          str = ".H ";
+          f = s !== ". h";
+          break;
+        case "#":
+          break out;
+      }
+      this.board[x + y * this.cntX].guess.str = str;
+      if (f) break;
+    }
+
+    if (b === "#" && this.board[x + y * this.cntX].guess.island === i) {
+      this.board.forEach((el, idx) => { if (el.guess.str.charAt(0) === ".") this.board[idx].guess.str = this.board[idx].guess.str.charAt(2); });
+      return true;
+    }
+    this.board.forEach((el, idx) => { if (el.guess.str.charAt(0) === ".") this.board[idx].guess.str = this.board[idx].guess.str.charAt(1); });
+    return false;
   }
 }
 
