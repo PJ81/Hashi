@@ -35,11 +35,11 @@ class Hashi extends Game {
 
   draw() {
     this.ctx.beginPath();
-    this.board.forEach(e => { if (e.guess.island) e.guess.island.draw(this.ctx) });
+    this.lines.forEach(e => e.draw(this.ctx));
     this.ctx.stroke();
 
     this.ctx.beginPath();
-    this.lines.forEach(e => e.draw(this.ctx));
+    this.board.forEach(e => { if (e.puzzle.island) e.puzzle.island.draw(this.ctx) });
     this.ctx.stroke();
   }
 
@@ -57,9 +57,9 @@ class Hashi extends Game {
   }
 
   getIsland(x: number, y: number): Island {
-    for (const e of this.board.filter(e => e.guess.island)) {
-      if (e.guess.island.hasPoint(x, y))
-        return e.guess.island;
+    for (const e of this.board.filter(e => e.puzzle.island)) {
+      if (e.puzzle.island.hasPoint(x, y))
+        return e.puzzle.island;
     }
     return null;
   }
@@ -76,7 +76,30 @@ class Hashi extends Game {
         } else {
           dx = this.selected.x < i.x ? 1 : -1;
         }
-        if (this.setPath(i, dx, dy)) {
+        let str = this.setPath(i, dx, dy);
+        if (str.length > 0) {
+          const x = this.selected.x, y = this.selected.y;
+          let a: number, b: number;
+          if (dx === 0) {
+            a = dy > 0 ? 2 : 0;
+            b = dy > 0 ? 0 : 2;
+          } else {
+            a = dx > 0 ? 1 : 3;
+            b = dx > 0 ? 3 : 1;
+          }
+
+          if (str === "+") {
+            const bi = this.board[x + y * this.cntX].guess.island.connections[a].str;
+            if (dx === 0) {
+              str = bi === " " ? "v" : bi === "v" ? "V" : " ";
+            } else {
+              str = bi === " " ? "h" : bi === "h" ? "H" : " ";
+            }
+          }
+
+          this.board[x + y * this.cntX].guess.island.setConnection(a, i, str);
+          this.board[i.x + i.y * this.cntX].guess.island.setConnection(b, this.selected, str);
+
           const ln = new Line(this.selected.x, this.selected.y, i.x, i.y);
           let f = false;
           for (let l = this.lines.length - 1, c = l; c > -1; c--) {
@@ -97,9 +120,9 @@ class Hashi extends Game {
     }
   }
 
-  setPath(i: Island, dx: number, dy: number): boolean {
+  setPath(i: Island, dx: number, dy: number): string {
     let x = this.selected.x, y = this.selected.y,
-      str: string, s = dx === 0 ? ". v" : ". h",
+      str = "", s = dx === 0 ? ". v" : ". h",
       b: string, f = false;
     out:
     while (true) {
@@ -132,12 +155,15 @@ class Hashi extends Game {
       if (f) break;
     }
 
-    if (b === "#" && this.board[x + y * this.cntX].guess.island === i) {
+    if (b === "#" && this.board[x + y * this.cntX].puzzle.island === i) {
       this.board.forEach((el, idx) => { if (el.guess.str.charAt(0) === ".") this.board[idx].guess.str = this.board[idx].guess.str.charAt(2); });
-      return true;
+      if (str === "") {
+        return "+";
+      }
+      return str.charAt(2);
     }
     this.board.forEach((el, idx) => { if (el.guess.str.charAt(0) === ".") this.board[idx].guess.str = this.board[idx].guess.str.charAt(1); });
-    return false;
+    return "";
   }
 }
 

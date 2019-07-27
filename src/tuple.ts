@@ -13,6 +13,11 @@ class Tuple {
     this.island = null;
     this.str = " ";
   }
+
+  set(i: Island, str: string) {
+    this.island = i;
+    this.str = str;
+  }
 }
 
 class Cell {
@@ -26,15 +31,13 @@ class Cell {
 
   set(i: Island, what: TType) {
     if (what === TType.GUESS) {
-      this.guess.island = i;
-      this.guess.str = "#";
+      this.guess.set(i, "#");
     } else {
-      this.puzzle.island = i;
-      this.puzzle.str = "#";
+      this.puzzle.set(i, "#");
     }
   }
 }
 
 export {
-  TType, Cell
+  TType, Tuple, Cell
 };

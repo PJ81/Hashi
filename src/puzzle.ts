@@ -25,9 +25,10 @@ export default class Puzzle {
     let board: Cell[];
     while (true) {
       board = new Array(this.cntX * this.cntY).fill(null).map(e => new Cell());
-      const i = new Island(this.rnd(this.cntX), this.rnd(this.cntY));
+      const i = new Island(this.rnd(this.cntX), this.rnd(this.cntY)),
+        ni = new Island(i.x, i.y);
       board[i.x + i.y * this.cntX].set(i, TType.PUZZLE);
-      board[i.x + i.y * this.cntX].set(i, TType.GUESS);
+      board[i.x + i.y * this.cntX].set(ni, TType.GUESS);
       this.createIslands(board, 0, 0);
       islands = board.filter(e => e.puzzle.island);
       if (islands.length >= this.maxIslands) break;
@@ -77,13 +78,14 @@ export default class Puzzle {
       if (x < 0 || x >= this.cntX || y < 0 || y >= this.cntY || board[x + this.cntX * y].puzzle.str !== " ") return false;
     } while (!(x === ex && y === ey));
 
-    const ni = new Island(ex, ey);
+    const ni = new Island(ex, ey),
+      nni = new Island(ex, ey);
     board[x + this.cntX * y].set(ni, TType.PUZZLE);
-    board[x + this.cntX * y].set(ni, TType.GUESS);
-    i.setConnection(dir, ni, false);
-    ni.setConnection(this.invDir(dir), i, false);
+    board[x + this.cntX * y].set(nni, TType.GUESS);
+
     const str = dx !== 0 ? (Math.random() < .25 ? "H" : "h") : (Math.random() < .25 ? "V" : "v");
-    ni.count = i.count = ((str === "H" || str === "V") ? 2 : 1);
+    i.setConnection(dir, ni, str);
+    ni.setConnection(this.invDir(dir), i, str);
 
     while (--steps) {
       x -= dx;
