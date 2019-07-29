@@ -95,5 +95,3 @@ export default class Puzzle {
     return true;
   }
 }
-
-new Puzzle();
