@@ -8,7 +8,6 @@ export default class Puzzle {
 
   rnd: (n: number) => number;
   invDir: (d: number) => number;
-  spotIsFree: (x: any, y: any) => boolean;
   rndArray: (arr: any[]) => any;
 
   constructor(cx, cy, dens) {
