@@ -8,7 +8,6 @@ export default class Island {
   posY: number;
   selected: boolean;
   connections: Tuple[];
-  guesses: Island[];
 
   hasFreeConnection: (dir: number) => boolean;
   hasPoint: (x: number, y: number) => boolean;
@@ -34,14 +33,8 @@ export default class Island {
     ctx.rect(this.posX, this.posY, this.size, this.size);
 
     const cc = this.connections.reduce((acc, con) => acc + (con ? (con.str === "v" || con.str === "h" ? 1 : con.str === "V" || con.str === "H" ? 2 : 0) : 0), 0);
-    /*gc = this.guesses.reduce((acc, con) => acc + (con ? con.count : 0), 0);
-
-  if (gc === cc) {
-    ctx.fillStyle = "#0f0";//rgb(0, 255, 0)";
-    ctx.fillRect(this.posX, this.posY, this.size, this.size);
-    ctx.fillStyle = "#000";
-  }*/
-    if (this.selected) {
+   
+ if (this.selected) {
       ctx.fillStyle = "#ff0";
       ctx.fillRect(this.posX, this.posY, this.size, this.size);
       ctx.fillStyle = "#000";
