@@ -28,18 +28,11 @@ export default class Island {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = "#eee";//rgb(255,255,255)";
+    ctx.fillStyle = this.selected ? "#ee0" : "#eee";
     ctx.fillRect(this.posX, this.posY, this.size, this.size);
     ctx.rect(this.posX, this.posY, this.size, this.size);
 
     const cc = this.connections.reduce((acc, con) => acc + (con ? (con.str === "v" || con.str === "h" ? 1 : con.str === "V" || con.str === "H" ? 2 : 0) : 0), 0);
-   
- if (this.selected) {
-      ctx.fillStyle = "#ff0";
-      ctx.fillRect(this.posX, this.posY, this.size, this.size);
-      ctx.fillStyle = "#000";
-    }
-
     ctx.fillStyle = "#000";
     ctx.fillText(`${cc}`, this.posX + 5, this.posY + 17);
   }
