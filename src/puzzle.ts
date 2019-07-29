@@ -11,7 +11,7 @@ export default class Puzzle {
   spotIsFree: (x: any, y: any) => boolean;
   rndArray: (arr: any[]) => any;
 
-  constructor(cx = 11, cy = 11, dens = 35) {
+  constructor(cx, cy, dens) {
     this.cntX = cx;
     this.cntY = cx;
     this.maxIslands = Math.floor(cx * cy * dens / 100);
