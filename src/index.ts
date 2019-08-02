@@ -107,7 +107,7 @@ class Hashi extends Game {
             if (z.equals(ln)) {
               f = true;
               if (!z.nextStep()) {
-                this.lines.splice(l, 1);
+                this.lines.splice(c, 1);
               };
               break;
             }
