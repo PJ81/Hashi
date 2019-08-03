@@ -11,6 +11,7 @@ class Hashi extends Game {
   selected: Island;
   board: Cell[];
   lines: Line[];
+  game_over: boolean;
 
   constructor(cx = 10, cy = 10, den = 25) {
     super();
@@ -18,6 +19,7 @@ class Hashi extends Game {
     this.cntY = cy;
     this.lines = [];
     this.selected = null;
+    this.game_over = false;
     this.puzzle = new Puzzle(cx, cy, den);
 
     const BOX_SIZE = 21;
@@ -41,9 +43,20 @@ class Hashi extends Game {
     this.ctx.beginPath();
     this.board.forEach(e => { if (e.puzzle.island) e.puzzle.island.draw(this.ctx) });
     this.ctx.stroke();
+
+    if (this.game_over) {
+      this.ctx.fillStyle = "#00c";
+      this.ctx.textAlign = "center";
+      this.ctx.font = "40px Consolas";
+      this.ctx.fillText("WELL DONE!", this.canvas.width >> 1, this.canvas.height >> 1);
+      this.ctx.font = "20px Consolas";
+      this.ctx.textAlign = "start";
+    }
   }
 
   click(me: MouseEvent, te: TouchEvent) {
+    if (this.game_over) return;
+
     let x: number, y: number;
     if (me) {
       x = me.clientX - (me.srcElement as HTMLCanvasElement).offsetLeft;
@@ -76,6 +89,7 @@ class Hashi extends Game {
         } else {
           dx = this.selected.x < i.x ? 1 : -1;
         }
+
         let str = this.setPath(i, dx, dy);
         if (str.length > 0) {
           const x = this.selected.x, y = this.selected.y;
@@ -113,11 +127,23 @@ class Hashi extends Game {
             }
           }
           if (!f) this.lines.push(ln);
+          if (this.testConnections()) this.game_over = true;
         }
       }
       this.selected.selected = false;
       this.selected = null;
     }
+  }
+
+  testConnections() {
+    for (const cell of this.board) {
+      if (cell.guess.island) {
+        for (let c = 0; c < 4; c++) {
+          if (cell.guess.island.connections[c].str !== cell.puzzle.island.connections[c].str) return false;
+        }
+      }
+    }
+    return true;
   }
 
   setPath(i: Island, dx: number, dy: number): string {
@@ -167,4 +193,4 @@ class Hashi extends Game {
   }
 }
 
-new Hashi(11, 11, 35);
+new Hashi(7, 7, 15);
